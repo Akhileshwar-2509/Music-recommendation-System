@@ -1,4 +1,7 @@
+Flask
+gunicorn
+pandas
 requests
 spotipy
-pandas
 scikit-learn
+pyarrow  # if you're using pandas 3.0 or planning to
