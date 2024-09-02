@@ -1,3 +1,3 @@
 # config.py
-CLIENT_ID = 'your_client_id'
-CLIENT_SECRET = 'your_client_secret'
+CLIENT_ID = f9ae90b723f1437dac1e74a7ceff4eb3
+CLIENT_SECRET = e6a0e9e841a14c3fa7176261d83cda24
