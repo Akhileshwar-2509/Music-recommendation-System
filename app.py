@@ -1,11 +1,30 @@
-# main.py
+# app.py
 
+from flask import Flask, jsonify, request
 import requests
 import base64
 import pandas as pd
 import spotipy
 from config import CLIENT_ID, CLIENT_SECRET
 from utils import hybrid_recommendations
+from sklearn.preprocessing import MinMaxScaler
+
+app = Flask(__name__)
+
+@app.route('/recommendations', methods=['GET'])
+def get_recommendations():
+    input_song_name = request.args.get('song', default="I'm Good (Blue)")
+    access_token = get_access_token(CLIENT_ID, CLIENT_SECRET)
+    playlist_id = '37i9dQZF1DX76Wlfdnj7AP'
+    music_df = get_trending_playlist_data(playlist_id, access_token)
+
+    scaler = MinMaxScaler()
+    music_features = music_df[['Danceability', 'Energy', 'Key', 'Loudness', 'Mode', 'Speechiness', 'Acousticness',
+                               'Instrumentalness', 'Liveness', 'Valence', 'Tempo']].values
+    music_features_scaled = scaler.fit_transform(music_features)
+
+    recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5)
+    return jsonify(recommendations)
 
 def get_access_token(client_id, client_secret):
     client_credentials = f"{client_id}:{client_secret}"
@@ -22,8 +41,7 @@ def get_access_token(client_id, client_secret):
     if response.status_code == 200:
         return response.json()['access_token']
     else:
-        print("Error obtaining access token.")
-        exit()
+        return None
 
 def get_trending_playlist_data(playlist_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
@@ -81,17 +99,4 @@ def get_trending_playlist_data(playlist_id, access_token):
     return df
 
 if __name__ == "__main__":
-    access_token = get_access_token(CLIENT_ID, CLIENT_SECRET)
-    playlist_id = '37i9dQZF1DX76Wlfdnj7AP'
-    music_df = get_trending_playlist_data(playlist_id, access_token)
-
-    from sklearn.preprocessing import MinMaxScaler
-    scaler = MinMaxScaler()
-    music_features = music_df[['Danceability', 'Energy', 'Key', 'Loudness', 'Mode', 'Speechiness', 'Acousticness',
-                               'Instrumentalness', 'Liveness', 'Valence', 'Tempo']].values
-    music_features_scaled = scaler.fit_transform(music_features)
-
-    input_song_name = "I'm Good (Blue)"
-    recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5)
-    print(f"Hybrid recommended songs for '{input_song_name}':")
-    print(recommendations)
+    app.run(host='0.0.0.0', port=8000)
